@@ -19,6 +19,13 @@ namespace Mockup
         public float maxDistance = 90f;
         public float wheelStep = 0.12f;   // 휠 한 칸당 거리 비율
 
+        [Header("오소그래픽 (카메라가 Orthographic이면 사용, 버거플리즈식 대각선 쿼터뷰)")]
+        public float orthoYaw = 45f;
+        public float orthoPitch = 35f;
+        public float orthoCamDistance = 60f;  // 클리핑 방지용 거리 (오소에선 화면 크기와 무관)
+        public float minOrthoSize = 6f;
+        public float maxOrthoSize = 25f;
+
         bool freeView;
         bool panning;
         Vector3 lastGround;
@@ -29,6 +36,18 @@ namespace Mockup
 
         void Awake()
         {
+            if (cam.orthographic)
+            {
+                // 오소: 거리 대신 orthographicSize로 줌. yaw는 PlayerController 이동 방향에도 쓰임
+                yaw = orthoYaw;
+                transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+                var rot = Quaternion.Euler(orthoPitch, 0f, 0f);
+                cam.transform.localRotation = rot;
+                camDir = rot * Vector3.back;
+                cam.transform.localPosition = camDir * orthoCamDistance;
+                distance = cam.orthographicSize;
+                return;
+            }
             var lp = cam.transform.localPosition;
             distance = lp.magnitude;
             camDir = lp / Mathf.Max(0.001f, distance);
@@ -132,6 +151,12 @@ namespace Mockup
             }
             else lastPinch = -1f;
 
+            if (cam.orthographic)
+            {
+                distance = Mathf.Clamp(d, minOrthoSize, maxOrthoSize);
+                cam.orthographicSize = distance;
+                return;
+            }
             distance = Mathf.Clamp(d, minDistance, maxDistance);
             cam.transform.localPosition = camDir * distance;
         }
