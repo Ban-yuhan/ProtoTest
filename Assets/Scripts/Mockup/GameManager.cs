@@ -617,8 +617,12 @@ namespace Mockup
 
         public void ResetGame()
         {
+            if (ScreenTransition.Busy) return;
             Time.timeScale = 1f;
-            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+            int index = SceneManager.GetActiveScene().buildIndex;
+            // transition In → 씬 리로드(초기화) → transition Out. 연출 오브젝트가 없으면 바로 리로드.
+            if (ScreenTransition.Instance != null) ScreenTransition.Instance.ReloadScene(index);
+            else SceneManager.LoadScene(index);
         }
     }
 }
